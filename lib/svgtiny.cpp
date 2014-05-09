@@ -117,8 +117,8 @@ svgtiny_code svgtiny_parse(struct svgtiny_diagram *diagram,
 	/* get graphic dimensions */
 	state.diagram = diagram;
 	state.document = document;
-	state.viewport_width = viewport_width;
-	state.viewport_height = viewport_height;
+	state.viewport_width = (viewport_width == 0 ? 1024 : viewport_width);
+	state.viewport_height = (viewport_height == 0 ? 1024 : viewport_height);
 	svgtiny_parse_position_attributes(svg, state, &x, &y, &width, &height);
 	diagram->width = width;
 	diagram->height = height;
@@ -175,6 +175,7 @@ svgtiny_code svgtiny_parse_svg(Poco::XML::Element *svg,
 				&min_x, &min_y, &vwidth, &vheight) == 4 ||
 				sscanf(s, " %f %f %f %f",
 				&min_x, &min_y, &vwidth, &vheight) == 4) {
+					cout << "viewW: " << state.viewport_width << "  viewH: " << state.viewport_height << endl;
 			state.ctm.a = (float) state.viewport_width / vwidth;
 			state.ctm.d = (float) state.viewport_height / vheight;
 			state.ctm.e += -min_x * state.ctm.a;
@@ -803,7 +804,7 @@ svgtiny_code svgtiny_parse_poly(Poco::XML::Element *poly,
 	}
 
 	/* allocate space for path: it will never have more elements than s */
-	p = (float*) malloc(sizeof p[0] * strlen(s));
+	p = (float*) malloc(sizeof (float) * strlen(s));
 	if (!p) {
         //xmlFree(points);
         free(points);
@@ -835,7 +836,7 @@ svgtiny_code svgtiny_parse_poly(Poco::XML::Element *poly,
 		p[i++] = svgtiny_PATH_CLOSE;
 
 	//xmlFree(points);
-    free(points);
+    //free(points); //TODO oriol leaking here!
 
 	return svgtiny_add_path(p, i, &state);
 }
